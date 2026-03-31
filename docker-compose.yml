@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  scraper:
+    build: .
+    volumes:
+      - /home/mnohava/camper-hub/data:/data        # Pi output dir
+      - ollama_models:/root/.ollama                 # Persist model — no re-download
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:1b}
+      - OUTPUT_DIR=/data
+      - SCHEDULE=${SCHEDULE:-all}
+    mem_limit: 3g                                   # Guard Pi 4 RAM
+    restart: "no"                                   # Run once and exit
+
+volumes:
+  ollama_models:
