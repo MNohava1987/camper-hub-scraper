@@ -6,8 +6,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Install Ollama (install.sh requires systemd; download tarball directly instead)
+RUN apt-get update && apt-get install -y --no-install-recommends zstd tar \
+    && curl -fsSL https://github.com/ollama/ollama/releases/download/v0.19.0/ollama-linux-arm64.tar.zst \
+       -o /tmp/ollama.tar.zst \
+    && tar -I zstd -xf /tmp/ollama.tar.zst -C /usr/local \
+    && rm /tmp/ollama.tar.zst \
+    && apt-get purge -y zstd && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Python deps
 WORKDIR /app
