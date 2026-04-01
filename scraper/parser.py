@@ -23,6 +23,49 @@ Text to parse:
 """
 
 
+def parse_events_from_api(api_data: list[dict]) -> list[dict]:
+    """
+    Try to extract structured events directly from intercepted API JSON responses.
+    Returns events if recognisable event data is found, otherwise empty list.
+    """
+    events = []
+    event_keywords = {"event", "activity", "band", "weekend", "schedule", "title", "start", "date"}
+
+    for item in api_data:
+        data = item.get("data")
+        flat = json.dumps(data).lower()
+        if sum(1 for kw in event_keywords if kw in flat) >= 3:
+            print(f"  [API intercept] Promising response from: {item['url'][:80]}")
+            # Try common shapes
+            candidates = []
+            if isinstance(data, list):
+                candidates = data
+            elif isinstance(data, dict):
+                for v in data.values():
+                    if isinstance(v, list) and len(v) > 0:
+                        candidates = v
+                        break
+            for item in candidates[:50]:
+                if isinstance(item, dict):
+                    title = (
+                        item.get("title") or item.get("name") or
+                        item.get("eventName") or item.get("summary") or ""
+                    )
+                    if not title:
+                        continue
+                    events.append({
+                        "title": str(title),
+                        "date_start": item.get("date") or item.get("startDate") or item.get("start_date") or item.get("start"),
+                        "date_end": item.get("endDate") or item.get("end_date") or item.get("end"),
+                        "time_start": item.get("time") or item.get("startTime") or item.get("start_time"),
+                        "time_end": item.get("endTime") or item.get("end_time"),
+                        "description": item.get("description") or item.get("details") or item.get("summary"),
+                        "type": item.get("type") or item.get("category") or "other",
+                        "recurring": bool(item.get("recurring") or item.get("isRecurring")),
+                    })
+    return events
+
+
 def parse_events(text: str, model: str, ollama_host: str) -> list[dict]:
     # Trim to fit model context window (~6000 chars is safe for 1b models)
     trimmed = text[:6000]

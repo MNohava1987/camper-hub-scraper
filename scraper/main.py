@@ -13,7 +13,7 @@ from pathlib import Path
 
 from config import SOURCES, OLLAMA_HOST, OLLAMA_MODEL, OUTPUT_DIR
 from scraper import scrape_page
-from parser import parse_events
+from parser import parse_events, parse_events_from_api
 from merger import merge_events
 from writer import write_ics, write_next_weekend
 
@@ -40,12 +40,22 @@ def main():
 
         print(f"\n[{source['name']}] {source['url']}")
         try:
-            text = scrape_page(source["url"])
-            print(f"  Scraped {len(text)} chars")
-            if len(text) < 100:
-                print("  Warning: very little text — page may not have rendered")
-            events = parse_events(text, OLLAMA_MODEL, OLLAMA_HOST)
-            print(f"  Parsed {len(events)} events")
+            result = scrape_page(source["url"])
+            text = result["text"]
+            api_data = result["api_data"]
+            print(f"  Scraped {len(text)} chars, {len(api_data)} API responses intercepted")
+
+            # Try structured API data first (faster, more reliable)
+            events = parse_events_from_api(api_data)
+
+            # Fall back to LLM text parsing if API intercept found nothing
+            if not events:
+                print("  No structured API data — falling back to LLM text parse")
+                if len(text) < 100:
+                    print("  Warning: very little text — page may not have rendered")
+                events = parse_events(text, OLLAMA_MODEL, OLLAMA_HOST)
+
+            print(f"  Found {len(events)} events")
             all_new.extend(events)
         except Exception as e:
             if source.get("optional"):
