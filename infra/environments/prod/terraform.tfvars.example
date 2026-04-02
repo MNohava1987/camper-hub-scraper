@@ -1,0 +1,6 @@
+project_id         = "drift-command"
+region             = "us-central1"
+alert_email        = "mnohava@gmail.com"
+billing_account_id = "01351C-85D7FC-16A4BB"
+monthly_budget_usd = 10
+upload_token       = "REPLACE_WITH_RANDOM_SECRET"
