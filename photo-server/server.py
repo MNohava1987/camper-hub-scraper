@@ -6,6 +6,7 @@ import uuid
 
 import qrcode
 from flask import Flask, abort, request, send_file, Response
+from werkzeug.middleware.proxy_fix import ProxyFix
 from google.cloud import storage
 from PIL import Image, ImageOps
 import pillow_heif
@@ -13,6 +14,8 @@ import pillow_heif
 pillow_heif.register_heif_opener()
 
 app = Flask(__name__)
+# Trust X-Forwarded-Proto from Cloud Run so request.url_root uses https://
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 BUCKET_NAME = os.environ["GCS_PHOTOS_BUCKET"]
 UPLOAD_TOKEN = os.environ["UPLOAD_TOKEN"]
