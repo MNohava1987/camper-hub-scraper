@@ -1,0 +1,143 @@
+{
+  "generated": "2026-04-01",
+  "this_weekend": {
+    "start": "2026-04-03",
+    "end": "2026-04-05",
+    "has_events": false,
+    "theme": null,
+    "bands": [],
+    "activities": [],
+    "other": []
+  },
+  "next_event_weekend": {
+    "start": "2026-05-22",
+    "end": "2026-05-24",
+    "has_events": true,
+    "theme": {
+      "title": "Memorial Day Weekend",
+      "date_start": "2026-05-22",
+      "date_end": "2026-05-25",
+      "time_start": null,
+      "time_end": null,
+      "description": "A weekend of exciting activities, featuring a special performance by Gen X on May 24th.",
+      "type": "theme_weekend",
+      "recurring": false
+    },
+    "bands": [
+      {
+        "title": "May 24 - Gen X Jukebox",
+        "date_start": "2026-05-24",
+        "date_end": null,
+        "time_start": "18:00",
+        "time_end": null,
+        "description": null,
+        "type": "band",
+        "recurring": false
+      }
+    ],
+    "activities": [],
+    "other": []
+  },
+  "upcoming": [
+    {
+      "title": "Memorial Day Weekend",
+      "date_start": "2026-05-22",
+      "date_end": "2026-05-25",
+      "time_start": null,
+      "time_end": null,
+      "description": "A weekend of exciting activities, featuring a special performance by Gen X on May 24th.",
+      "type": "theme_weekend",
+      "recurring": false
+    },
+    {
+      "title": "May 24 - Gen X Jukebox",
+      "date_start": "2026-05-24",
+      "date_end": null,
+      "time_start": "18:00",
+      "time_end": null,
+      "description": null,
+      "type": "band",
+      "recurring": false
+    },
+    {
+      "title": "Steal of a Deal Weekend",
+      "date_start": "2026-05-29",
+      "date_end": "2026-05-31",
+      "time_start": null,
+      "time_end": null,
+      "description": "Unbeatable savings for booking a stay of 3 nights or more with a FREE night of camping and half-price games in the arcade.",
+      "type": "theme_weekend",
+      "recurring": false
+    },
+    {
+      "title": "May 30 - Just Crista",
+      "date_start": "2026-05-30",
+      "date_end": null,
+      "time_start": "18:00",
+      "time_end": null,
+      "description": null,
+      "type": "band",
+      "recurring": false
+    },
+    {
+      "title": "Bullhead Days Week",
+      "date_start": "2026-06-01",
+      "date_end": "2026-06-07",
+      "time_start": null,
+      "time_end": null,
+      "description": "A week packed with fun, both at Kamp Dels and throughout the town of Waterville, featuring a performance by Buffalo Alice on June 6th.",
+      "type": "theme_weekend",
+      "recurring": false
+    },
+    {
+      "title": "June 6 - Buffalo Alice",
+      "date_start": "2026-06-06",
+      "date_end": null,
+      "time_start": "18:00",
+      "time_end": null,
+      "description": null,
+      "type": "band",
+      "recurring": false
+    },
+    {
+      "title": "Sports Fanatic Week",
+      "date_start": "2026-06-08",
+      "date_end": "2026-06-14",
+      "time_start": null,
+      "time_end": null,
+      "description": "A week dedicated to sports with activities like a punt, pass, and kick competition on June 13th.",
+      "type": "theme_weekend",
+      "recurring": false
+    },
+    {
+      "title": "June 13 - 3 Hour Download",
+      "date_start": "2026-06-13",
+      "date_end": null,
+      "time_start": "18:00",
+      "time_end": null,
+      "description": null,
+      "type": "band",
+      "recurring": false
+    },
+    {
+      "title": "Parent Appreciation Week",
+      "date_start": "2026-06-15",
+      "date_end": "2026-06-21",
+      "time_start": null,
+      "time_end": null,
+      "description": "A week of fun activities to celebrate parents, with a performance by Stone Daisy on June 20th.",
+      "type": "theme_weekend",
+      "recurring": false
+    },
+    {
+      "title": "June 20 - Stone Daisy",
+      "date_start": "2026-06-20",
+      "date_end": null,
+      "time_start": "18:00",
+      "time_end": null,
+      "description": null,
+      "type": "band",
+      "recurring": false
+    }
+  ]
+}

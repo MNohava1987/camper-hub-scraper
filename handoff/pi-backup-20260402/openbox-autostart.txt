@@ -1,0 +1,23 @@
+# Disable screen blanking and DPMS sleep
+xset s off
+xset s noblank
+xset -dpms
+
+# Hide cursor after 1s idle
+unclutter -idle 1 &
+
+# Start MagicMirror in server-only mode
+cd /home/mnohava/MagicMirror && node serveronly &
+
+# Wait for MM2 to be ready then launch Chromium kiosk
+sleep 8 && chromium \
+  --remote-debugging-port=9222 \
+  --noerrdialogs \
+  --disable-infobars \
+  --kiosk \
+  --app=http://localhost:8080 \
+  --disable-session-crashed-bubble \
+  --disable-restore-session-state &
+
+# Photo upload server
+python3 /home/mnohava/photo-upload/server.py >> /tmp/photo-upload.log 2>&1 &

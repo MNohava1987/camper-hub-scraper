@@ -1,0 +1,10 @@
+total 10804
+drwxrwxr-x 2 mnohava mnohava    4096 Apr  2 12:31 .
+drwxrwxr-x 3 mnohava mnohava    4096 Mar 31 12:49 ..
+-rw-rw-r-- 1 mnohava mnohava  870525 Apr  2 12:09 248fb263-50d1-41a4-b7a8-813b3927c171.jpg
+-rw-rw-r-- 1 mnohava mnohava 1105422 Apr  2 12:08 2e613178-faf1-4d5c-9bdf-adef5a2ead2a.jpg
+-rw-rw-r-- 1 mnohava mnohava 1141393 Apr  2 12:08 4cfcab9a-1e38-4b6c-92f4-7583f056d56c.jpg
+-rw-rw-r-- 1 mnohava mnohava 3023804 Apr  2 12:08 593ab937-d313-4042-a303-ff5c55b074e0.jpg
+-rw-rw-r-- 1 mnohava mnohava 1285571 Apr  2 12:09 80c93774-a33a-4282-8191-4e5846e72b52.jpg
+-rw-rw-r-- 1 mnohava mnohava 2366554 Apr  2 12:09 ce75855e-92f7-47d5-a7fe-227d493ebde1.jpg
+-rw-rw-r-- 1 mnohava mnohava 1250341 Apr  2 12:08 d440ff48-0491-44be-a568-247c176a6861.jpg
