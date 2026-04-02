@@ -1,39 +1,46 @@
 # Session Checkpoint
 
 Date: 2026-04-02
-Active Step: 6 — waiting for Pi install validation
-Step Status: Steps 3–5 complete and deployed; waiting for Project Owner to run PI-INSTALL-INSTRUCTIONS.md on Pi
-Pi Status: Live, untouched, fully operational
+Active Step: 8 — Cleanup (optional)
+Step Status: Steps 1–7 complete. Migration live. Pi running from GCS.
+Pi Status: Live, running from GCS, fully operational
 
 ## State Summary
 
-### Completed This Session
-- **Step 1**: Repo created at https://github.com/MNohava1987/camper-hub-scraper, initial commit pushed.
-- **Step 2**: All GCP infra applied via Terraform. Committed and pushed.
-- **Step 3 — Photo Server**: `photo-server/server.py` (Flask, GCS-backed), Dockerfile, requirements.txt. Built and deployed to Cloud Run. Tested: /manage (200), /qr.png (valid PNG).
-- **Step 4 — Scraper GCS**: `scraper/writer.py` + `scraper/main.py` updated to upload to GCS when OUTPUT_MODE=gcs. Built and deployed to Cloud Run Job. Ran job successfully — all 3 files landed in `gs://drift-command-camper-hub-data/`.
-- **Step 5 — Pi Sync**: `pi/sync.sh` and `pi/README.md` written and committed.
-- **GitHub Actions**: `deploy-photo-server.yml` + `deploy-scraper.yml` + `cloudbuild.scraper.yaml` committed.
-- **GitHub Secrets/Vars**: WIF_PROVIDER, DEPLOY_SA_EMAIL, PROJECT_ID, REGION all set.
-- **Step 6 prep**: `handoff/PI-INSTALL-INSTRUCTIONS.md` written with exact Pi commands.
+### All Steps Complete
 
-### Verified Working
-- Photo server: https://camper-hub-photo-server-6wgwxo5cka-uc.a.run.app
-  - /manage (200), /qr.png (valid PNG), upload working
-- Scraper job: ran successfully, events.json + kamp_dels.ics + next_weekend.json in GCS data bucket
-- GCS buckets: drift-command-camper-hub-photos, drift-command-camper-hub-data
+- **Step 1**: Repo at https://github.com/MNohava1987/camper-hub-scraper ✓
+- **Step 2**: All GCP infra applied via Terraform ✓
+- **Step 3**: Photo server live at https://camper-hub-photo-server-6wgwxo5cka-uc.a.run.app ✓
+- **Step 4**: Scraper Cloud Run Job deployed, running on schedule ✓
+- **Step 5**: pi/sync.sh in repo ✓
+- **Step 6**: Pi fully configured:
+  - gcloud + gsutil installed (google-cloud-cli 563.0.0)
+  - pi-sync SA activated with key at ~/camper-hub-pi-sync-key.json
+  - sync.sh installed at ~/sync.sh, cron running every 5 min
+  - Manual sync verified — 7 photos synced, data files updated ✓
+- **Step 7**: Cutover complete:
+  - config.js line 104 updated: `localhost:3001/qr.png` → Cloud Run URL
+  - MagicMirror restarted and running (PID 18572)
+  - All 7 original Pi photos uploaded to GCS and synced back ✓
 
-## Key Config (hardcoded, confirmed)
+### Migration Status
+The Pi is now running fully from GCS:
+- Photos served from `gs://drift-command-camper-hub-photos` (synced every 5 min)
+- Event data from `gs://drift-command-camper-hub-data` (updated by Cloud Run Job)
+- QR code points to Cloud Run photo server (upload from phone works)
+- Old local photo server (~/photo-upload/server.py) still running from autostart — see Step 8
+
+## Key Config
 - GCP project: `drift-command`
 - Region: `us-central1`
 - Photo server URL: `https://camper-hub-photo-server-6wgwxo5cka-uc.a.run.app`
+- Manage page: `https://camper-hub-photo-server-6wgwxo5cka-uc.a.run.app/manage?token=y7mE_4JZweMRzmZ_nGEgfISuKrOMSxz_2i8Y5Nt-hOU`
 - Photos bucket: `gs://drift-command-camper-hub-photos`
 - Data bucket: `gs://drift-command-camper-hub-data`
-- Upload token: `y7mE_4JZweMRzmZ_nGEgfISuKrOMSxz_2i8Y5Nt-hOU` (in Secret Manager + terraform.tfvars — NOT committed)
-- WIF provider: `projects/1053790586719/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider`
-- GitHub deploy SA: `camper-hub-github-deploy@drift-command.iam.gserviceaccount.com`
-- AR repo: `us-central1-docker.pkg.dev/drift-command/camper-hub`
-- Pi-sync SA: `camper-hub-pi-sync@drift-command.iam.gserviceaccount.com`
+- Upload token: `y7mE_4JZweMRzmZ_nGEgfISuKrOMSxz_2i8Y5Nt-hOU` (in Secret Manager — NOT committed)
+- Pi cron: `*/5 * * * * /home/mnohava/sync.sh >> /home/mnohava/sync.log 2>&1`
+- Pi SA key: `~/camper-hub-pi-sync-key.json`
 
 ## Terraform Auth Pattern
 ```bash
@@ -43,26 +50,26 @@ GOOGLE_CLOUD_QUOTA_PROJECT=drift-command \
 terraform <command> -var-file=environments/prod/terraform.tfvars
 ```
 
-## Open Decisions
-- **Step 6**: Project Owner must SSH to Pi and run `handoff/PI-INSTALL-INSTRUCTIONS.md`. Report back when all checklist items are green.
-- **Step 7 (Cutover)**: Requires explicit "go" from Project Owner. Only change is updating MM2 config.js to point `MMM-CamperQR` at the Cloud Run URL instead of `localhost:3001`.
+## Open Items
 
-## Next Actions (in order)
-
-### 1. Project Owner runs PI-INSTALL-INSTRUCTIONS.md on Pi
-- SSH to 100.108.167.28
-- Follow steps exactly
-- Report back: all checklist items green or any errors
-
-### 2. Step 7 — Cutover (STOP — need explicit "go")
-Once Step 6 validated, update Pi's MM2 config.js:
+### Step 8 — Cleanup (optional, low urgency)
+The old Pi photo server is still running from OpenBox autostart but is no longer used:
 ```
-Change: { label: "Add Photos", image: "http://localhost:3001/qr.png" }
-To:     { label: "Add Photos", image: "https://camper-hub-photo-server-6wgwxo5cka-uc.a.run.app/qr.png" }
+# ~/photo-upload/server.py — still launching at boot via openbox autostart
+# Line in ~/.config/openbox/autostart:
+#   python3 /home/mnohava/photo-upload/server.py >> /tmp/photo-upload.log 2>&1 &
 ```
-This is the only Pi file change needed.
+To remove it: delete that line from autostart and kill the process.
+Not urgent — it's harmless, just wastes a tiny bit of memory.
 
-### 3. Step 8 — Cleanup (after Step 7 is stable)
-- Remove Pi's old `~/photo-upload/server.py` and associated autostart entry
-- Decommission any local Docker containers that were running the photo server
-- Archive or remove Tailscale SSH key from scraper setup
+### Scraper data quality
+Current events.json = [] — Kamp Dels appears to not have published 2026 events yet.
+Scraper is working correctly; will pick up events when they're posted.
+Previous data preserved in handoff/pi-backup-20260402/events.json.
+
+### crcmod performance (minor)
+Pi shows slow checksumming warning on gsutil rsync. Install C extension to speed up:
+```bash
+sudo apt-get install -y python3-dev && pip3 install crcmod
+```
+Not urgent — only affects first sync after changes.

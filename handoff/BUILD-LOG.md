@@ -7,10 +7,10 @@
 
 ## Current Status
 
-- **Active Step**: 6 — Pi Install (waiting for Project Owner)
-- **Last Completed**: Step 5 — Pi Sync Script (2026-04-02)
-- **Pi Status**: Live, untouched, fully operational
-- **Deploy Readiness**: Steps 1–5 deployed to GCP; Step 6 requires Pi access
+- **Active Step**: 8 — Cleanup (optional)
+- **Last Completed**: Step 7 — Cutover (2026-04-02)
+- **Pi Status**: Live, running from GCS, fully operational
+- **Deploy Readiness**: Migration complete — all steps done
 
 ---
 
@@ -86,7 +86,8 @@
 ---
 
 ### Step 6 — End-to-End Validation
-**Status**: Pending
+**Status**: Complete — 2026-04-02
+**Done**: gcloud installed on Pi, pi-sync SA activated, sync.sh installed, cron wired, manual sync verified (7 photos + data files)
 **Goal**: Install sync.sh on Pi. Run manually. Upload photo via Cloud Run. Verify it appears in Pi slideshow within 5 min. Run scraper job. Verify KampDels data updates. Confirm budget alert wired.
 **Files to touch**: Pi (sync.sh + cron only — no MM2 or config changes)
 **Key decisions**: First step that touches the Pi. Requires explicit Project Owner go-ahead.
@@ -96,7 +97,8 @@
 ---
 
 ### Step 7 — Cutover
-**Status**: Pending
+**Status**: Complete — 2026-04-02
+**Done**: config.js line 104 updated to Cloud Run URL, MM2 restarted. Old photo server still in autostart (Step 8 cleanup).
 **Goal**: Update Pi config.js QR code URL. Remove photo-upload server from Pi autostart. Set Cloud Scheduler active. Verify QR on display routes to Cloud Run.
 **Files to touch**: Pi `config.js`, Pi `~/.config/openbox/autostart`, Cloud Scheduler enabled
 **Key decisions**: POINT OF NO RETURN for photo server. Project Owner must say "go" explicitly.
