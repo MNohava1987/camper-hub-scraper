@@ -112,20 +112,34 @@ h1{{margin-bottom:1rem}}
 form{{margin-bottom:1.5rem;background:#222;padding:1rem;border-radius:6px}}
 form label{{display:block;margin-bottom:.5rem}}
 form input[type=file]{{margin-bottom:.8rem;display:block}}
-form button{{padding:.5rem 1.2rem;background:#0a0;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:1rem}}
+form button{{padding:.5rem 1.2rem;background:#555;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:not-allowed;transition:background .2s}}
+form button.ready{{background:#0a0;cursor:pointer}}
 .grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}}
 .item img{{width:100%;border-radius:4px;display:block}}
 .item button{{width:100%;margin-top:.4rem;padding:.4rem;background:#c00;color:#fff;border:none;border-radius:4px;cursor:pointer}}
 </style></head>
 <body>
 <h1>Camper Hub Photos ({len(blobs)})</h1>
-<form method="post" action="/upload?token={token}" enctype="multipart/form-data">
+<form id="upform" method="post" action="/upload?token={token}" enctype="multipart/form-data">
   <label>Add photo(s):</label>
-  <input type="file" name="photo" accept="image/*" capture="environment" multiple>
-  <button type="submit">Upload</button>
+  <input id="picker" type="file" name="photo" accept="image/*" multiple>
+  <button id="upbtn" type="submit" disabled>Choose photos first</button>
 </form>
 <div class="grid">{items}</div>
 <script>
+const picker = document.getElementById('picker');
+const btn = document.getElementById('upbtn');
+picker.addEventListener('change', function() {{
+  if (picker.files.length > 0) {{
+    btn.textContent = 'Upload ' + picker.files.length + ' photo' + (picker.files.length > 1 ? 's' : '');
+    btn.disabled = false;
+    btn.classList.add('ready');
+  }} else {{
+    btn.textContent = 'Choose photos first';
+    btn.disabled = true;
+    btn.classList.remove('ready');
+  }}
+}});
 async function del(name) {{
   if (!confirm('Delete ' + name + '?')) return;
   const r = await fetch('/photo/' + name + '?token={token}', {{method:'DELETE'}});
