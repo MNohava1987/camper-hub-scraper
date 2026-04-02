@@ -1,0 +1,14 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - Dockerfile.scraper
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/camper-hub/scraper:$COMMIT_SHA
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/camper-hub/scraper:latest
+      - .
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/camper-hub/scraper:$COMMIT_SHA
+  - us-central1-docker.pkg.dev/$PROJECT_ID/camper-hub/scraper:latest

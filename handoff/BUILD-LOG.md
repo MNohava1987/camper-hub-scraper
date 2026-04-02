@@ -7,10 +7,10 @@
 
 ## Current Status
 
-- **Active Step**: 2 — Terraform Bootstrap
-- **Last Completed**: Step 1 — Repo Setup (2026-04-02)
+- **Active Step**: 6 — Pi Install (waiting for Project Owner)
+- **Last Completed**: Step 5 — Pi Sync Script (2026-04-02)
 - **Pi Status**: Live, untouched, fully operational
-- **Deploy Readiness**: Not started
+- **Deploy Readiness**: Steps 1–5 deployed to GCP; Step 6 requires Pi access
 
 ---
 
@@ -29,7 +29,7 @@
 ---
 
 ### Step 2 — Terraform Bootstrap
-**Status**: Pending
+**Status**: Complete — 2026-04-02
 **Goal**: Write all .tf files (provider, variables, GCS buckets, SAs, WIF bindings, AR repo, budget alert). `terraform init` + `terraform plan` clean. Apply creates buckets and IAM — no Cloud Run yet.
 **Files to touch**: `infra/`
 **Key decisions**: See CLOUD_MIGRATION.md §5
@@ -43,7 +43,9 @@
 ---
 
 ### Step 3 — Photo Server Adaptation
-**Status**: Pending
+**Status**: Complete — 2026-04-02
+**Deployed**: https://camper-hub-photo-server-6wgwxo5cka-uc.a.run.app
+**Tested**: /manage (200), /qr.png (valid PNG), upload working
 **Goal**: Adapt `photo-server/server.py` to write/read from GCS instead of local disk. Dockerfile. Build image. Deploy to Cloud Run. Test upload + manage + /qr.png.
 **Files to touch**: `photo-server/`
 **Key decisions**: See CLOUD_MIGRATION.md §6.1
@@ -57,7 +59,9 @@
 ---
 
 ### Step 4 — Scraper Adaptation
-**Status**: Pending
+**Status**: Complete — 2026-04-02
+**Deployed**: Cloud Run Job camper-hub-scraper (us-central1)
+**Tested**: Manual execution succeeded; events.json, kamp_dels.ics, next_weekend.json in gs://drift-command-camper-hub-data/
 **Goal**: Add `OUTPUT_MODE=gcs` branch to `scraper/writer.py`. Build image. Deploy Cloud Run Job. Execute manually. Verify next_weekend.json lands in GCS data bucket.
 **Files to touch**: `scraper/writer.py`, `scraper/requirements.txt`, `Dockerfile.scraper`
 **Key decisions**: See CLOUD_MIGRATION.md §6.2
@@ -70,7 +74,8 @@
 ---
 
 ### Step 5 — Pi Sync Setup
-**Status**: Pending
+**Status**: Complete — 2026-04-02
+**Deployed**: pi/sync.sh committed. handoff/PI-INSTALL-INSTRUCTIONS.md written. Awaiting Project Owner to run on Pi.
 **Goal**: Write `pi/sync.sh`. Document cron entry. Do NOT run on Pi yet — deliver script and instructions only. Pi SA key creation documented but not deployed.
 **Files to touch**: `pi/sync.sh`, `pi/README.md`
 **Key decisions**: See CLOUD_MIGRATION.md §6.3

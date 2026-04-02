@@ -29,8 +29,8 @@ jobs:
       - name: Build image
         run: |
           gcloud builds submit . \
-            --dockerfile Dockerfile.scraper \
-            --tag ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/scraper:${{ github.sha }} \
+            --config cloudbuild.scraper.yaml \
+            --substitutions COMMIT_SHA=${{ github.sha }} \
             --project ${{ vars.PROJECT_ID }}
 
       - name: Tag latest
