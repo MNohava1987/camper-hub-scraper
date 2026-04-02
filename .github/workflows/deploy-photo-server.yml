@@ -1,0 +1,46 @@
+name: Deploy Photo Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'photo-server/**'
+      - '.github/workflows/deploy-photo-server.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.DEPLOY_SA_EMAIL }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build image
+        run: |
+          gcloud builds submit photo-server/ \
+            --tag ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:${{ github.sha }} \
+            --project ${{ vars.PROJECT_ID }}
+
+      - name: Tag latest
+        run: |
+          gcloud artifacts docker tags add \
+            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:${{ github.sha }} \
+            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:latest \
+            --project ${{ vars.PROJECT_ID }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy camper-hub-photo-server \
+            --image ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:${{ github.sha }} \
+            --region ${{ vars.REGION }} \
+            --project ${{ vars.PROJECT_ID }}

@@ -8,6 +8,7 @@ Usage:
   schedule: "weekly" | "daily" | "frequent" | "all" (default: all)
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from config import SOURCES, OLLAMA_HOST, OLLAMA_MODEL, OUTPUT_DIR
 from scraper import scrape_page
 from parser import parse_events, parse_events_from_api
 from merger import merge_events
-from writer import write_ics, write_next_weekend
+from writer import write_ics, write_next_weekend, gcs_upload_json
 
 EVENTS_FILE = Path(OUTPUT_DIR) / "events.json"
 
@@ -70,8 +71,10 @@ def main():
     # Persist raw JSON (source of truth)
     EVENTS_FILE.write_text(json.dumps(merged, indent=2))
     print(f"\nSaved {len(merged)} total events → {EVENTS_FILE}")
+    if os.environ.get("OUTPUT_MODE") == "gcs":
+        gcs_upload_json(str(EVENTS_FILE))
 
-    # Write outputs
+    # Write outputs (each calls _maybe_gcs_upload internally)
     write_ics(merged, str(Path(OUTPUT_DIR) / "kamp_dels.ics"))
     write_next_weekend(merged, str(Path(OUTPUT_DIR) / "next_weekend.json"))
 

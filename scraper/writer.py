@@ -1,4 +1,6 @@
+import io
 import json
+import os
 import re
 from collections import defaultdict
 from datetime import date, timedelta
@@ -70,6 +72,7 @@ def write_ics(events: list[dict], output_path: str) -> None:
 
     Path(output_path).write_bytes(cal.to_ical())
     print(f"  Wrote {output_path}")
+    _maybe_gcs_upload(output_path, "application/octet-stream")
 
 
 def write_next_weekend(events: list[dict], output_path: str) -> None:
@@ -130,3 +133,30 @@ def write_next_weekend(events: list[dict], output_path: str) -> None:
 
     Path(output_path).write_text(json.dumps(payload, indent=2))
     print(f"  Wrote {output_path}")
+    _maybe_gcs_upload(output_path, "application/json")
+
+
+# ─── GCS upload helpers ────────────────────────────────────────────────────────
+
+def _maybe_gcs_upload(local_path: str, content_type: str) -> None:
+    """Upload local_path to GCS if OUTPUT_MODE=gcs is set."""
+    if os.environ.get("OUTPUT_MODE") != "gcs":
+        return
+    bucket_name = os.environ["GCS_DATA_BUCKET"]
+    blob_name = Path(local_path).name
+    _gcs_upload(local_path, bucket_name, blob_name, content_type)
+
+
+def gcs_upload_json(local_path: str) -> None:
+    """Upload a JSON file to the data bucket unconditionally (for events.json)."""
+    bucket_name = os.environ["GCS_DATA_BUCKET"]
+    blob_name = Path(local_path).name
+    _gcs_upload(local_path, bucket_name, blob_name, "application/json")
+
+
+def _gcs_upload(local_path: str, bucket_name: str, blob_name: str, content_type: str) -> None:
+    from google.cloud import storage  # lazy import — not available in local dev without the package
+    client = storage.Client()
+    blob = client.bucket(bucket_name).blob(blob_name)
+    blob.upload_from_filename(local_path, content_type=content_type)
+    print(f"  Uploaded gs://{bucket_name}/{blob_name}")

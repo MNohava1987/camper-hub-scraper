@@ -7,8 +7,8 @@
 
 ## Current Status
 
-- **Active Step**: 1 — Repo Setup
-- **Last Completed**: None
+- **Active Step**: 2 — Terraform Bootstrap
+- **Last Completed**: Step 1 — Repo Setup (2026-04-02)
 - **Pi Status**: Live, untouched, fully operational
 - **Deploy Readiness**: Not started
 
@@ -17,7 +17,7 @@
 ## Step History
 
 ### Step 1 — Repo Setup
-**Status**: Pending
+**Status**: Complete
 **Goal**: Create GitHub repo, commit all current Pi module files and scraper code as baseline, establish directory structure per CLOUD_MIGRATION.md §4.
 **Files to touch**: repo root only — no source code changes
 **Key decisions**:
