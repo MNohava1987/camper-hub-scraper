@@ -67,30 +67,51 @@ def parse_events_from_api(api_data: list[dict]) -> list[dict]:
 
 
 def parse_events(text: str, model: str, ollama_host: str) -> list[dict]:
-    # Trim to fit model context window (~6000 chars is safe for 1b models)
-    trimmed = text[:6000]
+    # Trim aggressively — Pi 4 CPU inference is ~6 tok/s, 2000 chars ≈ 500 tokens
+    trimmed = text[:2000]
     prompt = PROMPT.format(text=trimmed)
 
     try:
+        # Use streaming so there's no server-side response timeout (non-streaming
+        # mode has a 5-minute hard timeout on Ollama; streaming has none)
         response = requests.post(
             f"{ollama_host}/api/generate",
-            json={"model": model, "prompt": prompt, "stream": False},
-            timeout=120,
+            json={"model": model, "prompt": prompt, "stream": True, "options": {"num_predict": 800}},
+            timeout=300,  # per-chunk timeout — prefill for 500 input tokens takes ~100s on Pi 4
+            stream=True,
         )
         response.raise_for_status()
-        raw = response.json().get("response", "")
+        raw = ""
+        for line in response.iter_lines():
+            if line:
+                chunk = json.loads(line)
+                raw += chunk.get("response", "")
+                if chunk.get("done"):
+                    break
     except Exception as e:
         print(f"  Ollama error: {e}")
         return []
 
-    # Extract JSON array from response (LLMs sometimes add preamble)
-    match = re.search(r"\[.*\]", raw, re.DOTALL)
-    if not match:
-        print(f"  No JSON array found in response. Raw: {raw[:200]}")
-        return []
+    # Extract JSON array — prefer non-empty array containing objects
+    for pattern in [r"\[\s*\{.*\]", r"\[.*\]"]:
+        match = re.search(pattern, raw, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
 
-    try:
-        return json.loads(match.group())
-    except json.JSONDecodeError as e:
-        print(f"  JSON parse error: {e}. Raw: {raw[:200]}")
-        return []
+    # Fallback: LLM emitted bare objects instead of an array
+    objects = re.findall(r'\{[^{}]+\}', raw, re.DOTALL)
+    if objects:
+        events = []
+        for o in objects:
+            try:
+                events.append(json.loads(o))
+            except json.JSONDecodeError:
+                pass
+        if events:
+            return events
+
+    print(f"  No valid JSON found in response. Raw: {raw[:200]}")
+    return []

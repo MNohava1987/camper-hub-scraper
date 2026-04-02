@@ -50,10 +50,11 @@ def main():
 
             # Fall back to LLM text parsing if API intercept found nothing
             if not events:
-                print("  No structured API data — falling back to LLM text parse")
-                if len(text) < 100:
-                    print("  Warning: very little text — page may not have rendered")
-                events = parse_events(text, OLLAMA_MODEL, OLLAMA_HOST)
+                if len(text) < 200:
+                    print(f"  Only {len(text)} chars — page likely didn't render JS, skipping LLM")
+                else:
+                    print("  No structured API data — falling back to LLM text parse")
+                    events = parse_events(text, OLLAMA_MODEL, OLLAMA_HOST)
 
             print(f"  Found {len(events)} events")
             all_new.extend(events)

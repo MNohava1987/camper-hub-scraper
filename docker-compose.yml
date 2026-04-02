@@ -4,14 +4,15 @@ services:
   scraper:
     build: .
     volumes:
-      - /home/mnohava/camper-hub/data:/data        # Pi output dir
-      - ollama_models:/root/.ollama                 # Persist model — no re-download
+      - ./data:/data
+      - ~/.ssh/id_ed25519:/root/.ssh/id_ed25519:ro
     environment:
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:1b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - OLLAMA_HOST=http://host.docker.internal:11434
       - OUTPUT_DIR=/data
       - SCHEDULE=${SCHEDULE:-all}
-    mem_limit: 3g                                   # Guard Pi 4 RAM
-    restart: "no"                                   # Run once and exit
-
-volumes:
-  ollama_models:
+      - PI_HOST=${PI_HOST:-mnohava@100.108.167.28}
+      - PI_DATA_DIR=${PI_DATA_DIR:-/home/mnohava/camper-hub/data}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"

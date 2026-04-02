@@ -1,8 +1,48 @@
 import json
+import re
+from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
 
 from icalendar import Calendar, Event as ICalEvent
+
+
+def _dedup_events(events: list[dict]) -> list[dict]:
+    """Deduplicate events with the same date and similar title.
+
+    Strips leading "Mon DD - " date prefixes, normalises to lowercase alphanum,
+    groups by (date_start, first 12 chars), and keeps the most descriptive entry
+    (prefers: has time_start > has description > longer title).
+    """
+    def _norm_key(e: dict) -> tuple:
+        raw = e.get("title", "")
+        # Strip leading "Mon DD - " date prefix
+        stripped = re.sub(r'^[A-Za-z]+ \d{1,2}\s*[-–]\s*', '', raw)
+        # Strip subtitle after " (", ": ", or " - " to get the base name
+        base = re.split(r'\s*[(:]\s*|\s+-\s+', stripped)[0]
+        norm = re.sub(r'[^a-z0-9]', '', base.lower())
+        return (e.get("date_start", ""), norm)
+
+    groups: dict[tuple, list[dict]] = defaultdict(list)
+    for e in events:
+        groups[_norm_key(e)].append(e)
+
+    result = []
+    for group in groups.values():
+        best = max(
+            group,
+            key=lambda e: (
+                bool(e.get("time_start")),
+                bool(e.get("description")),
+                len(e.get("title", "")),
+            ),
+        )
+        result.append(best)
+
+    # Preserve relative order from original list
+    order = {id(e): i for i, e in enumerate(events)}
+    result.sort(key=lambda e: order[id(e)])
+    return result
 
 
 def write_ics(events: list[dict], output_path: str) -> None:
@@ -34,30 +74,58 @@ def write_ics(events: list[dict], output_path: str) -> None:
 
 def write_next_weekend(events: list[dict], output_path: str) -> None:
     today = date.today()
-    # Next Saturday (or today if it's Saturday)
-    days_ahead = (5 - today.weekday()) % 7
-    if days_ahead == 0:
-        days_ahead = 7
-    next_sat = today + timedelta(days=days_ahead)
-    next_sun = next_sat + timedelta(days=1)
 
-    weekend_events = [
+    def weekend_friday(d: date) -> date:
+        """Return the Friday of the current weekend, or the upcoming Friday."""
+        wd = d.weekday()  # Mon=0 … Fri=4, Sat=5, Sun=6
+        if wd >= 5:  # already in a weekend (Sat/Sun) — back up to Friday
+            return d - timedelta(days=wd - 4)
+        return d + timedelta(days=(4 - wd) % 7)
+
+    def build_weekend(fri: date) -> dict:
+        sun = fri + timedelta(days=2)
+        evts = [
+            e for e in events
+            if e.get("date_start") and not e.get("recurring")
+            and fri.isoformat() <= e["date_start"] <= sun.isoformat()
+        ]
+        return {
+            "start": fri.isoformat(),
+            "end": sun.isoformat(),
+            "has_events": bool(evts),
+            "theme": next((e for e in evts if e.get("type") == "theme_weekend"), None),
+            "bands": _dedup_events([e for e in evts if e.get("type") == "band"]),
+            "activities": _dedup_events([e for e in evts if e.get("type") == "activity"]),
+            "other": _dedup_events([e for e in evts if e.get("type") not in ("band", "theme_weekend", "activity")]),
+        }
+
+    this_fri = weekend_friday(today)
+    this_weekend = build_weekend(this_fri)
+
+    # Scan forward week by week to find the next weekend that has events
+    next_event_weekend = None
+    fri = this_fri + timedelta(weeks=1)
+    for _ in range(52):
+        wknd = build_weekend(fri)
+        if wknd["has_events"]:
+            next_event_weekend = wknd
+            break
+        fri += timedelta(weeks=1)
+
+    # Build deduplicated upcoming list (next 10 non-recurring events after today)
+    upcoming_raw = [
         e for e in events
-        if e.get("date_start") and (
-            next_sat.isoformat() <= e["date_start"] <= next_sun.isoformat()
-        )
+        if e.get("date_start") and not e.get("recurring")
+        and e["date_start"] > today.isoformat()
     ]
+    upcoming_raw.sort(key=lambda e: e["date_start"])
+    upcoming = _dedup_events(upcoming_raw[:30])[:10]
 
     payload = {
         "generated": today.isoformat(),
-        "weekend_start": next_sat.isoformat(),
-        "weekend_end": next_sun.isoformat(),
-        "bands": [e for e in weekend_events if e.get("type") == "band"],
-        "theme": next(
-            (e for e in weekend_events if e.get("type") == "theme_weekend"), None
-        ),
-        "activities": [e for e in weekend_events if e.get("type") == "activity"],
-        "other": [e for e in weekend_events if e.get("type") == "other"],
+        "this_weekend": this_weekend,
+        "next_event_weekend": next_event_weekend,
+        "upcoming": upcoming,
     }
 
     Path(output_path).write_text(json.dumps(payload, indent=2))
