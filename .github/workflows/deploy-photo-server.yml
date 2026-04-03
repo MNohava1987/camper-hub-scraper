@@ -13,7 +13,23 @@ permissions:
   id-token: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r photo-server/requirements.txt pytest pytest-mock
+
+      - name: Run tests
+        run: pytest photo-server/tests/ -v
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,22 +41,38 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Build image
-        run: |
-          gcloud builds submit photo-server/ \
-            --tag ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:${{ github.sha }} \
-            --project ${{ vars.PROJECT_ID }}
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.REGION }}-docker.pkg.dev --quiet
 
-      - name: Tag latest
+      - name: Build and push image
         run: |
-          gcloud artifacts docker tags add \
-            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:${{ github.sha }} \
-            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:latest \
-            --project ${{ vars.PROJECT_ID }}
+          IMAGE=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server
+          docker build -t $IMAGE:${{ github.sha }} photo-server/
+          docker push $IMAGE:${{ github.sha }}
+          docker tag $IMAGE:${{ github.sha }} $IMAGE:latest
+          docker push $IMAGE:latest
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy camper-hub-photo-server \
             --image ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/camper-hub/photo-server:${{ github.sha }} \
             --region ${{ vars.REGION }} \
-            --project ${{ vars.PROJECT_ID }}
+            --project ${{ vars.PROJECT_ID }} \
+            --port 8080 \
+            --service-account camper-hub-photo-server@${{ vars.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-secrets UPLOAD_TOKEN=camper-hub-upload-token:latest \
+            --set-env-vars GCS_PHOTOS_BUCKET=${{ vars.PROJECT_ID }}-camper-hub-photos \
+            --memory 512Mi \
+            --cpu 1 \
+            --allow-unauthenticated \
+            --max-instances 2
+
+      - name: Smoke test
+        run: |
+          URL=$(gcloud run services describe camper-hub-photo-server \
+            --region ${{ vars.REGION }} \
+            --project ${{ vars.PROJECT_ID }} \
+            --format='value(status.url)')
+          echo "Testing $URL/health"
+          curl -sf "$URL/health" | grep -q "ok"
+          echo "Smoke test passed"

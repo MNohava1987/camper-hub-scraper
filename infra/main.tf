@@ -7,7 +7,7 @@ data "google_project" "project" {
 resource "google_storage_bucket" "photos" {
   name          = "${var.project_id}-camper-hub-photos"
   location      = var.region
-  force_destroy = false
+  force_destroy = true  # bucket is temporary drop-storage; destroy empties it
 
   uniform_bucket_level_access = true
 
@@ -78,6 +78,7 @@ resource "google_storage_bucket_iam_member" "pi_data_ro" {
 }
 
 # ─── IAM — GitHub Deploy SA ───────────────────────────────────────────────────
+# Roles needed for CI/CD deploys AND terraform apply/destroy
 
 resource "google_project_iam_member" "github_deploy_cloudrun" {
   project = var.project_id
@@ -94,6 +95,49 @@ resource "google_project_iam_member" "github_deploy_sa_user" {
 resource "google_project_iam_member" "github_deploy_ar_writer" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+}
+
+# Terraform management roles
+resource "google_project_iam_member" "github_deploy_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+}
+
+resource "google_project_iam_member" "github_deploy_iam_admin" {
+  project = var.project_id
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+}
+
+resource "google_project_iam_member" "github_deploy_sa_admin" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+}
+
+resource "google_project_iam_member" "github_deploy_secret_admin" {
+  project = var.project_id
+  role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+}
+
+resource "google_project_iam_member" "github_deploy_scheduler_admin" {
+  project = var.project_id
+  role    = "roles/cloudscheduler.admin"
+  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+}
+
+resource "google_project_iam_member" "github_deploy_ar_admin" {
+  project = var.project_id
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+}
+
+resource "google_project_iam_member" "github_deploy_monitoring_admin" {
+  project = var.project_id
+  role    = "roles/monitoring.admin"
   member  = "serviceAccount:${google_service_account.github_deploy.email}"
 }
 
@@ -150,7 +194,7 @@ resource "google_cloud_run_v2_service" "photo_server" {
       image = "${var.region}-docker.pkg.dev/${var.project_id}/camper-hub/photo-server:latest"
 
       ports {
-        container_port = 3001
+        container_port = 8080
       }
 
       env {

@@ -120,15 +120,15 @@ form button.ready{{background:#0a0;cursor:pointer}}
 </style></head>
 <body>
 <h1>Camper Hub Photos ({len(blobs)})</h1>
-<form id="upform" method="post" action="/upload?token={token}" enctype="multipart/form-data">
-  <label>Add photo(s):</label>
-  <input id="picker" type="file" name="photo" accept="image/*" multiple>
-  <button id="upbtn" type="submit" disabled>Choose photos first</button>
-</form>
+<label>Add photo(s):</label>
+<input id="picker" type="file" accept="image/*" multiple>
+<button id="upbtn" disabled>Choose photos first</button>
+<div id="progress" style="margin:.5rem 0;min-height:1.2rem;font-size:.9rem"></div>
 <div class="grid">{items}</div>
 <script>
 const picker = document.getElementById('picker');
 const btn = document.getElementById('upbtn');
+const prog = document.getElementById('progress');
 picker.addEventListener('change', function() {{
   if (picker.files.length > 0) {{
     btn.textContent = 'Upload ' + picker.files.length + ' photo' + (picker.files.length > 1 ? 's' : '');
@@ -139,6 +139,24 @@ picker.addEventListener('change', function() {{
     btn.disabled = true;
     btn.classList.remove('ready');
   }}
+}});
+btn.addEventListener('click', async function() {{
+  const files = picker.files;
+  if (!files.length) return;
+  btn.disabled = true;
+  btn.classList.remove('ready');
+  let ok = 0, fail = 0;
+  for (let i = 0; i < files.length; i++) {{
+    prog.textContent = 'Uploading ' + (i+1) + ' of ' + files.length + '...';
+    const fd = new FormData();
+    fd.append('photo', files[i]);
+    try {{
+      const r = await fetch('/upload?token={token}', {{method:'POST', body:fd}});
+      if (r.ok) ok++; else {{ fail++; console.error('Upload failed', r.status, files[i].name); }}
+    }} catch(e) {{ fail++; console.error('Upload error', e, files[i].name); }}
+  }}
+  prog.textContent = ok + ' uploaded' + (fail ? ', ' + fail + ' failed' : '') + ' — reloading...';
+  setTimeout(() => location.reload(), 800);
 }});
 async function del(name) {{
   if (!confirm('Delete ' + name + '?')) return;
@@ -162,7 +180,7 @@ def qr_code():
     return send_file(buf, mimetype="image/png")
 
 
-@app.route("/healthz")
+@app.route("/health")
 def health():
     return "ok"
 

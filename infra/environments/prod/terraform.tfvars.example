@@ -1,6 +1,11 @@
 project_id         = "drift-command"
 region             = "us-central1"
-alert_email        = "mnohava@gmail.com"
-billing_account_id = "01351C-85D7FC-16A4BB"
+alert_email        = "you@example.com"
+billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
 monthly_budget_usd = 10
-upload_token       = "REPLACE_WITH_RANDOM_SECRET"
+
+# Secrets — never commit the real value
+# Local: copy terraform.tfvars.example → terraform.tfvars and fill in real values
+#   (terraform.tfvars is gitignored via *.tfvars rule)
+# CI: set GitHub Actions secret TF_UPLOAD_TOKEN; workflow passes it as TF_VAR_upload_token
+upload_token = "REPLACE_WITH_RANDOM_SECRET"
